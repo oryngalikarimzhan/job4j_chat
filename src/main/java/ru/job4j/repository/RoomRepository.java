@@ -10,9 +10,9 @@ import java.util.List;
 public interface RoomRepository extends CrudRepository<Room, Integer> {
     @Query("select distinct rm "
             + "from Room rm "
-            + "join fetch rm.members "
-            + "join fetch rm.messages "
-            + "join fetch rm.creator cr "
+            + "left join fetch rm.members "
+            + "left join fetch rm.messages "
+            + "left join fetch rm.creator cr "
             + "where cr.id = :creatorId")
     List<Room> findRoomsByCreatorId(@Param("creatorId") int creatorId);
 }

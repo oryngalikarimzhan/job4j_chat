@@ -18,7 +18,7 @@ public class Room {
     @JoinColumn(name = "creator_person_id")
     private Person creator;
     @ManyToMany(fetch = FetchType.LAZY, cascade = CascadeType.ALL)
-    @JoinTable(name = "room_members_and_roles", joinColumns = {
+    @JoinTable(name = "rooms_members_roles", joinColumns = {
             @JoinColumn(name = "room_id", nullable = false, updatable = false)},
             inverseJoinColumns = {
                     @JoinColumn(name = "role_id", nullable = false, updatable = false)})
@@ -29,6 +29,10 @@ public class Room {
 
     public void addMessage(Message message) {
         this.messages.add(message);
+    }
+
+    public void addMember(Person person, Role role) {
+        this.members.put(person, role);
     }
 
     public int getId() {
@@ -51,24 +55,12 @@ public class Room {
         return messages;
     }
 
-    public void setMessages(List<Message> messages) {
-        this.messages = messages;
-    }
-
     public Person getCreator() {
         return creator;
     }
 
     public void setCreator(Person creator) {
         this.creator = creator;
-    }
-
-    public Map<Person, Role> getMembers() {
-        return members;
-    }
-
-    public void setMembers(Map<Person, Role> members) {
-        this.members = members;
     }
 
     public Timestamp getCreated() {

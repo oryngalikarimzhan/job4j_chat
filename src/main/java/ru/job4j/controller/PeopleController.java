@@ -10,33 +10,33 @@ import ru.job4j.repository.PersonRepository;
 import java.util.List;
 
 @RestController
-@RequestMapping("/users")
-public class UserController {
-    private final PersonRepository users;
+@RequestMapping("/person")
+public class PeopleController {
+    private final PersonRepository people;
     private final BCryptPasswordEncoder encoder;
 
-    public UserController(PersonRepository users, BCryptPasswordEncoder encoder) {
-        this.users = users;
+    public PeopleController(PersonRepository people, BCryptPasswordEncoder encoder) {
+        this.people = people;
         this.encoder = encoder;
     }
 
     @GetMapping("/all")
     public List<Person> findAll() {
-        return (List<Person>) this.users.findAll();
+        return (List<Person>) this.people.findAll();
     }
 
-    @GetMapping("/{login}")
-    public ResponseEntity<Person> findByLogin(@PathVariable String login) {
-        var person = this.users.findByUsername(login);
+    @GetMapping("/{username}")
+    public ResponseEntity<Person> findByLogin(@PathVariable String username) {
+        var person = this.people.findByUsername(username);
         return new ResponseEntity<Person>(
                 person.orElse(new Person()),
                 person.isPresent() ? HttpStatus.OK : HttpStatus.NOT_FOUND
         );
     }
 
-    @GetMapping("/user_by_id/{id}")
+    @GetMapping("/id/{id}")
     public ResponseEntity<Person> findById(@PathVariable int id) {
-        var person = this.users.findById(id);
+        var person = this.people.findById(id);
         return new ResponseEntity<Person>(
                 person.orElse(new Person()),
                 person.isPresent() ? HttpStatus.OK : HttpStatus.NOT_FOUND
@@ -47,14 +47,14 @@ public class UserController {
     public ResponseEntity<Person> create(@RequestBody Person person) {
         person.setPassword(encoder.encode(person.getPassword()));
         return new ResponseEntity<Person>(
-                this.users.save(person),
+                this.people.save(person),
                 HttpStatus.CREATED
         );
     }
 
     @PutMapping("/")
     public ResponseEntity<Void> update(@RequestBody Person person) {
-        this.users.save(person);
+        this.people.save(person);
         return ResponseEntity.ok().build();
     }
 
@@ -62,7 +62,7 @@ public class UserController {
     public ResponseEntity<Void> delete(@PathVariable int id) {
         Person person = new Person();
         person.setId(id);
-        this.users.delete(person);
+        this.people.delete(person);
         return ResponseEntity.ok().build();
     }
 }
