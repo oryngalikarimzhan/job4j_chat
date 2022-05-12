@@ -1,13 +1,10 @@
 package ru.job4j.controller;
 
-import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
-import org.springframework.web.client.RestTemplate;
 import ru.job4j.domain.Message;
 import ru.job4j.repository.MessageRepository;
-import ru.job4j.repository.PersonRepository;
 
 import java.util.List;
 
@@ -16,7 +13,7 @@ import java.util.List;
 public class MessagesController {
     private MessageRepository messages;
 
-    public MessagesController(MessageRepository messages, PersonRepository people) {
+    public MessagesController(MessageRepository messages) {
         this.messages = messages;
     }
 
@@ -34,7 +31,7 @@ public class MessagesController {
         );
     }
 
-    @PostMapping("/")
+    @PostMapping("/new")
     public ResponseEntity<Message> create(@RequestBody Message message) {
         return new ResponseEntity<Message>(
                 this.messages.save(message),
