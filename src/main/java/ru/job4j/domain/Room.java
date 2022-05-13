@@ -79,6 +79,10 @@ public class Room {
         this.updated = updated;
     }
 
+    public Map<Person, Role> getMembers() {
+        return members;
+    }
+
     @Override
     public boolean equals(Object o) {
         if (this == o) {

@@ -3,6 +3,7 @@ package ru.job4j.controller;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
+import org.springframework.web.server.ResponseStatusException;
 import ru.job4j.domain.Role;
 import ru.job4j.repository.RoleRepository;
 
@@ -27,8 +28,10 @@ public class RolesController {
     public ResponseEntity<Role> findById(@PathVariable int id) {
         var role = this.roles.findById(id);
         return new ResponseEntity<Role>(
-                role.orElse(new Role()),
-                role.isPresent() ? HttpStatus.OK : HttpStatus.NOT_FOUND
+                role.orElseThrow(() -> new ResponseStatusException(
+                        HttpStatus.NOT_FOUND, "Role is not found"
+                )),
+                HttpStatus.OK
         );
     }
 }

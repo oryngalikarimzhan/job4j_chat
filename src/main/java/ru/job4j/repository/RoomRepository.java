@@ -15,4 +15,12 @@ public interface RoomRepository extends CrudRepository<Room, Integer> {
             + "left join fetch rm.creator cr "
             + "where cr.id = :creatorId")
     List<Room> findRoomsByCreatorId(@Param("creatorId") int creatorId);
+
+    @Query("select distinct rm "
+            + "from Room rm "
+            + "left join fetch rm.members "
+            + "left join fetch rm.messages "
+            + "left join fetch rm.creator cr "
+            + "where cr.username = :username")
+    List<Room> findRoomsByCreatorUsername(@Param("username") String username);
 }
