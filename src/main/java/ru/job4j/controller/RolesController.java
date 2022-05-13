@@ -7,6 +7,7 @@ import org.springframework.web.server.ResponseStatusException;
 import ru.job4j.domain.Role;
 import ru.job4j.repository.RoleRepository;
 
+import java.lang.reflect.InvocationTargetException;
 import java.util.List;
 
 @RestController
@@ -33,5 +34,16 @@ public class RolesController {
                 )),
                 HttpStatus.OK
         );
+    }
+
+    @PatchMapping("/")
+    public ResponseEntity<Void> update(@RequestBody Role role)
+            throws InvocationTargetException, IllegalAccessException {
+        var oldRole = roles.findById(role.getId())
+                .orElseThrow(() -> new ResponseStatusException(
+                        HttpStatus.NOT_FOUND, "Role is not found"));
+        oldRole = FieldDataSetter.setByReflection(oldRole, role);
+        roles.save(oldRole);
+        return ResponseEntity.ok().build();
     }
 }

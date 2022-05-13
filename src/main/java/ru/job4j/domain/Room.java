@@ -55,12 +55,24 @@ public class Room {
         return messages;
     }
 
+    public void setMessages(List<Message> messages) {
+        this.messages = messages;
+    }
+
     public Person getCreator() {
         return creator;
     }
 
     public void setCreator(Person creator) {
         this.creator = creator;
+    }
+
+    public Map<Person, Role> getMembers() {
+        return members;
+    }
+
+    public void setMembers(Map<Person, Role> members) {
+        this.members = members;
     }
 
     public Timestamp getCreated() {
@@ -77,10 +89,6 @@ public class Room {
 
     public void setUpdated(Timestamp updated) {
         this.updated = updated;
-    }
-
-    public Map<Person, Role> getMembers() {
-        return members;
     }
 
     @Override

@@ -8,10 +8,11 @@ import org.springframework.web.server.ResponseStatusException;
 import ru.job4j.domain.Person;
 import ru.job4j.repository.PersonRepository;
 
+import java.lang.reflect.InvocationTargetException;
 import java.util.List;
 
 @RestController
-@RequestMapping("/person")
+@RequestMapping("/users")
 public class PeopleController {
     private final PersonRepository people;
     private final BCryptPasswordEncoder encoder;
@@ -60,10 +61,15 @@ public class PeopleController {
         );
     }
 
-    @PutMapping("/")
-    public ResponseEntity<Void> update(@RequestBody Person person) {
-        Person rsl = this.people.findByUsername(person.getUsername()).orElse(person);
-        this.people.save(rsl);
+    @PatchMapping("/")
+    public ResponseEntity<Void> update(@RequestBody Person person)
+            throws InvocationTargetException, IllegalAccessException {
+        var oldPerson = people.findById(person.getId())
+                .orElseThrow(() -> new ResponseStatusException(
+                        HttpStatus.NOT_FOUND, "Person is not found"));
+        oldPerson = FieldDataSetter.setByReflection(oldPerson, person);
+        oldPerson.setPassword(encoder.encode(oldPerson.getPassword()));
+        people.save(oldPerson);
         return ResponseEntity.ok().build();
     }
 

@@ -18,14 +18,15 @@ import ru.job4j.domain.Role;
 import ru.job4j.domain.Room;
 import ru.job4j.repository.RoomRepository;
 
-import javax.servlet.http.HttpServletRequest;
 import javax.servlet.http.HttpServletResponse;
 import java.io.IOException;
+import java.lang.reflect.InvocationTargetException;
 import java.net.URI;
 import java.net.URISyntaxException;
 import java.sql.Timestamp;
 import java.util.HashMap;
 import java.util.List;
+import java.util.Map;
 
 @RestController
 @RequestMapping("/room")
@@ -34,7 +35,7 @@ public class RoomsController {
     private RestTemplate rest;
     private final RoomRepository rooms;
     private static final String MESSAGE_API = "http://localhost:8080/message/";
-    private static final String PERSON_API = "http://localhost:8080/person/";
+    private static final String PERSON_API = "http://localhost:8080/users/";
     private static final String ROLE_API = "http://localhost:8080/role/";
     private final ObjectMapper objectMapper;
 
@@ -96,7 +97,7 @@ public class RoomsController {
 
     @PostMapping("/new")
     public ResponseEntity<Room> create(@RequestBody Room room,
-                                       HttpServletRequest request) throws URISyntaxException {
+                                       RequestEntity request) throws URISyntaxException {
         if (room.getName() == null) {
             throw new NullPointerException("Room name field mustn't be empty");
         }
@@ -105,8 +106,7 @@ public class RoomsController {
         }
         room.setCreated(new Timestamp(System.currentTimeMillis()));
         room.setUpdated(new Timestamp(System.currentTimeMillis()));
-        HttpHeaders headers = new HttpHeaders();
-        headers.setBearerAuth(request.getHeader("Authorization"));
+        HttpHeaders headers = request.getHeaders();
         Person person = rest.exchange(
                 RequestEntity.get(
                         new URI(PERSON_API + SecurityContextHolder.getContext()
@@ -123,36 +123,44 @@ public class RoomsController {
         );
     }
 
-    @PutMapping("/")
-    public ResponseEntity<Void> update(@RequestBody Room room,
-                                       HttpServletRequest request,
-                                       RequestEntity requestEntity) throws URISyntaxException {
-        if (room.getName() == null) {
-            throw new NullPointerException("Room name field mustn't be empty");
-        }
-        if (room.getName().length() < 3) {
-            throw new IllegalArgumentException("Name can not be less than 3 character");
-        }
-        Room oldRoom = this.rooms.findById(room.getId()).orElse(room);
+    @PostMapping("/{id}/member/new")
+    public ResponseEntity<Void> addMember(@RequestBody Map<String, String> body,
+                                          @PathVariable int id,
+                                          RequestEntity requestEntity) throws URISyntaxException {
+        Room oldRoom = this.rooms.findById(id)
+                .orElseThrow(() -> new ResponseStatusException(
+                        HttpStatus.NOT_FOUND, "Room is not found")
+                );
         oldRoom.setUpdated(new Timestamp(System.currentTimeMillis()));
-        oldRoom.setName(room.getName());
         HttpHeaders headers = requestEntity.getHeaders();
         Person person = rest.exchange(
                 RequestEntity.get(
-                        new URI(PERSON_API + request.getParameter("username"))
+                        new URI(PERSON_API + body.get("username"))
                         ).headers(headers)
                         .build(),
                         Person.class)
                 .getBody();
         Role role = rest.exchange(
                 RequestEntity.get(
-                        new URI(ROLE_API + request.getParameter("role-id"))
+                        new URI(ROLE_API + body.get("roleId"))
                         ).headers(headers)
                         .build(),
                         Role.class)
                 .getBody();
         oldRoom.addMember(person, role);
         this.rooms.save(oldRoom);
+        return ResponseEntity.ok().build();
+    }
+
+    @PatchMapping("/")
+    public ResponseEntity<Void> update(@RequestBody Room room)
+            throws InvocationTargetException, IllegalAccessException {
+        var oldRoom = rooms.findById(room.getId())
+                .orElseThrow(() -> new ResponseStatusException(
+                        HttpStatus.NOT_FOUND, "Role is not found"));
+        oldRoom = FieldDataSetter.setByReflection(oldRoom, room);
+        oldRoom.setUpdated(new Timestamp(System.currentTimeMillis()));
+        rooms.save(oldRoom);
         return ResponseEntity.ok().build();
     }
 
@@ -194,7 +202,10 @@ public class RoomsController {
                 .getBody();
         rsl.setPerson(person);
 
-        Room room = this.rooms.findById(id).orElseThrow();
+        Room room = this.rooms.findById(id)
+                .orElseThrow(() -> new ResponseStatusException(
+                        HttpStatus.NOT_FOUND, "Room is not found")
+        );
         if (!room.getMembers().containsKey(person)) {
             Role role = rest.exchange(
                             RequestEntity.get(
@@ -206,6 +217,7 @@ public class RoomsController {
             room.addMember(person, role);
         }
         room.addMessage(rsl);
+        room.setUpdated(new Timestamp(System.currentTimeMillis()));
         this.rooms.save(room);
         return new ResponseEntity(rsl, HttpStatus.CREATED);
     }

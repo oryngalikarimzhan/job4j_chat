@@ -7,6 +7,7 @@ import org.springframework.web.server.ResponseStatusException;
 import ru.job4j.domain.Message;
 import ru.job4j.repository.MessageRepository;
 
+import java.lang.reflect.InvocationTargetException;
 import java.util.List;
 
 @RestController
@@ -44,4 +45,16 @@ public class MessagesController {
                 HttpStatus.CREATED
         );
     }
+
+    @PatchMapping("/")
+    public ResponseEntity<Void> update(@RequestBody Message message)
+            throws InvocationTargetException, IllegalAccessException {
+        var oldMessage = messages.findById(message.getId())
+                .orElseThrow(() -> new ResponseStatusException(
+                        HttpStatus.NOT_FOUND, "Message is not found"));
+        oldMessage = FieldDataSetter.setByReflection(oldMessage, message);
+        messages.save(oldMessage);
+        return ResponseEntity.ok().build();
+    }
+
 }
