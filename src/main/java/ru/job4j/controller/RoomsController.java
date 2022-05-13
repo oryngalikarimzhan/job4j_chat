@@ -46,8 +46,13 @@ public class RoomsController {
     }
 
     @GetMapping("/all")
-    public List<Room> findAll() {
-        return (List<Room>) rooms.findAll();
+    public ResponseEntity<?> findAll() {
+        return new ResponseEntity(
+                new HashMap<>() {{
+                    put("rooms", rooms.findAll());
+                }},
+                HttpStatus.OK
+        );
     }
 
     @GetMapping("/{id}")
@@ -62,21 +67,31 @@ public class RoomsController {
     }
 
     @GetMapping("/all/person/id/{id}")
-    public List<Room> findByCreatorId(@PathVariable int id) {
+    public ResponseEntity<?> findByCreatorId(@PathVariable int id) {
         List<Room> rsl = rooms.findRoomsByCreatorId(id);
         if (rsl == null) {
             throw new ResponseStatusException(HttpStatus.NOT_FOUND, "Username not found");
         }
-        return rsl;
+        return new ResponseEntity(
+                new HashMap<>() {{
+                    put("personRooms", rsl);
+                }},
+                HttpStatus.OK
+        );
     }
 
     @GetMapping("/all/person/{username}")
-    public List<Room> findByCreatorId(@PathVariable String username) {
+    public ResponseEntity<?> findByCreatorId(@PathVariable String username) {
         List<Room> rsl = rooms.findRoomsByCreatorUsername(username);
         if (rsl == null) {
             throw new ResponseStatusException(HttpStatus.NOT_FOUND, "Username not found");
         }
-        return rsl;
+        return new ResponseEntity(
+                new HashMap<>() {{
+                    put("personRooms", rsl);
+                }},
+                HttpStatus.OK
+        );
     }
 
     @PostMapping("/new")
@@ -110,7 +125,8 @@ public class RoomsController {
 
     @PutMapping("/")
     public ResponseEntity<Void> update(@RequestBody Room room,
-                                       HttpServletRequest request) throws URISyntaxException {
+                                       HttpServletRequest request,
+                                       RequestEntity requestEntity) throws URISyntaxException {
         if (room.getName() == null) {
             throw new NullPointerException("Room name field mustn't be empty");
         }
@@ -120,8 +136,7 @@ public class RoomsController {
         Room oldRoom = this.rooms.findById(room.getId()).orElse(room);
         oldRoom.setUpdated(new Timestamp(System.currentTimeMillis()));
         oldRoom.setName(room.getName());
-        HttpHeaders headers = new HttpHeaders();
-        headers.setBearerAuth(request.getHeader("Authorization"));
+        HttpHeaders headers = requestEntity.getHeaders();
         Person person = rest.exchange(
                 RequestEntity.get(
                         new URI(PERSON_API + request.getParameter("username"))
@@ -152,15 +167,14 @@ public class RoomsController {
     @PostMapping("/{id}/message/new")
     public ResponseEntity<Message> createRoomMessage(@RequestBody Message message,
                                                      @PathVariable int id,
-                                                     HttpServletRequest request) throws URISyntaxException {
+                                                     RequestEntity requestEntity) throws URISyntaxException {
         if (message.getText() == null) {
             throw new NullPointerException("Message text field mustn't be empty");
         }
         if (message.getText().length() == 0) {
             throw new IllegalArgumentException("Message should have at least one character");
         }
-        HttpHeaders headers = new HttpHeaders();
-        headers.setBearerAuth(request.getHeader("Authorization"));
+        HttpHeaders headers = requestEntity.getHeaders();
         Message rsl = rest.exchange(
                 RequestEntity.post(
                         new URI(MESSAGE_API)
@@ -197,7 +211,7 @@ public class RoomsController {
     }
 
     @ExceptionHandler(value = { IllegalArgumentException.class})
-    public void exceptionHandler(Exception e, HttpServletRequest request, HttpServletResponse response) throws IOException {
+    public void exceptionHandler(Exception e, HttpServletResponse response) throws IOException {
         response.setStatus(HttpStatus.BAD_REQUEST.value());
         response.setContentType("application/json");
         response.getWriter().write(objectMapper.writeValueAsString(new HashMap<>() { {
