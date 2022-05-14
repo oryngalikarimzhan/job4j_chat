@@ -1,18 +1,28 @@
 package ru.job4j.domain;
 
+import ru.job4j.handlers.Operation;
+
 import javax.persistence.*;
+import javax.validation.constraints.*;
 import java.util.Objects;
 
 @Entity
 @Table(name = "messages")
 public class Message {
+
     @Id
     @GeneratedValue(strategy = GenerationType.IDENTITY)
+    @NotNull(message = "Id must be non null", groups = {
+            Operation.OnUpdate.class, Operation.OnDelete.class
+    })
+    @Min(value = 1, message = "id value is bigger or equal to 1")
+    @Positive
     private int id;
-
+    @NotBlank(message = "Text must be not empty")
     private String text;
 
     @ManyToOne(fetch = FetchType.LAZY)
+    @Null(message = "Not allowed to set message creator person by yourself")
     private Person person;
 
     public int getId() {

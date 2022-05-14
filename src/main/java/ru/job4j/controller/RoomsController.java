@@ -9,16 +9,22 @@ import org.springframework.http.HttpStatus;
 import org.springframework.http.RequestEntity;
 import org.springframework.http.ResponseEntity;
 import org.springframework.security.core.context.SecurityContextHolder;
+import org.springframework.validation.annotation.Validated;
 import org.springframework.web.bind.annotation.*;
 import org.springframework.web.client.RestTemplate;
 import org.springframework.web.server.ResponseStatusException;
+import ru.job4j.controller.tools.FieldDataSetter;
 import ru.job4j.domain.Message;
 import ru.job4j.domain.Person;
 import ru.job4j.domain.Role;
 import ru.job4j.domain.Room;
+import ru.job4j.handlers.Operation;
 import ru.job4j.repository.RoomRepository;
 
 import javax.servlet.http.HttpServletResponse;
+import javax.validation.Valid;
+import javax.validation.constraints.Min;
+import javax.validation.constraints.NotBlank;
 import java.io.IOException;
 import java.lang.reflect.InvocationTargetException;
 import java.net.URI;
@@ -30,6 +36,7 @@ import java.util.Map;
 
 @RestController
 @RequestMapping("/room")
+@Validated
 public class RoomsController {
     @Autowired
     private RestTemplate rest;
@@ -57,7 +64,7 @@ public class RoomsController {
     }
 
     @GetMapping("/{id}")
-    public ResponseEntity<Room> findById(@PathVariable int id) {
+    public ResponseEntity<Room> findById(@PathVariable @Min(value = 1, message = "id >= 1") int id) {
         var room = this.rooms.findById(id);
         return new ResponseEntity<Room>(
                 room.orElseThrow(() -> new ResponseStatusException(
@@ -68,7 +75,7 @@ public class RoomsController {
     }
 
     @GetMapping("/all/person/id/{id}")
-    public ResponseEntity<?> findByCreatorId(@PathVariable int id) {
+    public ResponseEntity<?> findByCreatorId(@PathVariable @Min(value = 1, message = "id >= 1") int id) {
         List<Room> rsl = rooms.findRoomsByCreatorId(id);
         if (rsl == null) {
             throw new ResponseStatusException(HttpStatus.NOT_FOUND, "Username not found");
@@ -82,7 +89,7 @@ public class RoomsController {
     }
 
     @GetMapping("/all/person/{username}")
-    public ResponseEntity<?> findByCreatorId(@PathVariable String username) {
+    public ResponseEntity<?> findByCreatorId(@PathVariable @NotBlank(message = "Can not be empty") String username) {
         List<Room> rsl = rooms.findRoomsByCreatorUsername(username);
         if (rsl == null) {
             throw new ResponseStatusException(HttpStatus.NOT_FOUND, "Username not found");
@@ -96,7 +103,8 @@ public class RoomsController {
     }
 
     @PostMapping("/new")
-    public ResponseEntity<Room> create(@RequestBody Room room,
+    @Validated(Operation.OnCreate.class)
+    public ResponseEntity<Room> create(@Valid @RequestBody Room room,
                                        RequestEntity request) throws URISyntaxException {
         if (room.getName() == null) {
             throw new NullPointerException("Room name field mustn't be empty");
@@ -123,37 +131,9 @@ public class RoomsController {
         );
     }
 
-    @PostMapping("/{id}/member/new")
-    public ResponseEntity<Void> addMember(@RequestBody Map<String, String> body,
-                                          @PathVariable int id,
-                                          RequestEntity requestEntity) throws URISyntaxException {
-        Room oldRoom = this.rooms.findById(id)
-                .orElseThrow(() -> new ResponseStatusException(
-                        HttpStatus.NOT_FOUND, "Room is not found")
-                );
-        oldRoom.setUpdated(new Timestamp(System.currentTimeMillis()));
-        HttpHeaders headers = requestEntity.getHeaders();
-        Person person = rest.exchange(
-                RequestEntity.get(
-                        new URI(PERSON_API + body.get("username"))
-                        ).headers(headers)
-                        .build(),
-                        Person.class)
-                .getBody();
-        Role role = rest.exchange(
-                RequestEntity.get(
-                        new URI(ROLE_API + body.get("roleId"))
-                        ).headers(headers)
-                        .build(),
-                        Role.class)
-                .getBody();
-        oldRoom.addMember(person, role);
-        this.rooms.save(oldRoom);
-        return ResponseEntity.ok().build();
-    }
-
     @PatchMapping("/")
-    public ResponseEntity<Void> update(@RequestBody Room room)
+    @Validated(Operation.OnUpdate.class)
+    public ResponseEntity<Void> update(@Valid @RequestBody Room room)
             throws InvocationTargetException, IllegalAccessException {
         var oldRoom = rooms.findById(room.getId())
                 .orElseThrow(() -> new ResponseStatusException(
@@ -165,16 +145,45 @@ public class RoomsController {
     }
 
     @DeleteMapping("/{id}")
-    public ResponseEntity<Void> delete(@PathVariable int id) {
+    public ResponseEntity<Void> delete(@PathVariable @Min(value = 1, message = "id >= 1") int id) {
         Room room = new Room();
         room.setId(id);
         this.rooms.delete(room);
         return ResponseEntity.ok().build();
     }
 
+    @PostMapping("/{id}/member/new")
+    public ResponseEntity<Void> addMember(@RequestBody Map<String, String> body,
+                                          @PathVariable @Min(value = 1, message = "id >= 1") int id,
+                                          RequestEntity requestEntity) throws URISyntaxException {
+        Room oldRoom = this.rooms.findById(id)
+                .orElseThrow(() -> new ResponseStatusException(
+                        HttpStatus.NOT_FOUND, "Room is not found")
+                );
+        oldRoom.setUpdated(new Timestamp(System.currentTimeMillis()));
+        HttpHeaders headers = requestEntity.getHeaders();
+        Person person = rest.exchange(
+                        RequestEntity.get(
+                                        new URI(PERSON_API + body.get("username"))
+                                ).headers(headers)
+                                .build(),
+                        Person.class)
+                .getBody();
+        Role role = rest.exchange(
+                        RequestEntity.get(
+                                        new URI(ROLE_API + body.get("roleId"))
+                                ).headers(headers)
+                                .build(),
+                        Role.class)
+                .getBody();
+        oldRoom.addMember(person, role);
+        this.rooms.save(oldRoom);
+        return ResponseEntity.ok().build();
+    }
+
     @PostMapping("/{id}/message/new")
     public ResponseEntity<Message> createRoomMessage(@RequestBody Message message,
-                                                     @PathVariable int id,
+                                                     @PathVariable @Min(value = 1, message = "id >= 1") int id,
                                                      RequestEntity requestEntity) throws URISyntaxException {
         if (message.getText() == null) {
             throw new NullPointerException("Message text field mustn't be empty");
