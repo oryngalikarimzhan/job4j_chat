@@ -1,4 +1,4 @@
-package ru.job4j.security;
+package ru.job4j.config.security;
 
 import com.auth0.jwt.JWT;
 import com.fasterxml.jackson.databind.ObjectMapper;

@@ -17,7 +17,9 @@ public class Person {
     @NotNull(message = "Id must be non null", groups = {
             Operation.OnUpdate.class, Operation.OnDelete.class
     })
-    @Min(value = 1, message = "id value is bigger or equal to 1")
+    @Min(value = 1, message = "id value is bigger or equal to 1", groups = {
+            Operation.OnUpdate.class, Operation.OnDelete.class
+    })
     @Positive
     private int id;
     @NotBlank(message = "Username must be not empty", groups = {
