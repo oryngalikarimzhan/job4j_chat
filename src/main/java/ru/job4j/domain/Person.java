@@ -6,7 +6,6 @@ import javax.persistence.*;
 import javax.validation.constraints.Min;
 import javax.validation.constraints.NotBlank;
 import javax.validation.constraints.NotNull;
-import javax.validation.constraints.Positive;
 import java.util.*;
 
 @Entity
@@ -20,7 +19,6 @@ public class Person {
     @Min(value = 1, message = "id value is bigger or equal to 1", groups = {
             Operation.OnUpdate.class, Operation.OnDelete.class
     })
-    @Positive
     private int id;
     @NotBlank(message = "Username must be not empty", groups = {
             Operation.OnCreate.class

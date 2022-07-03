@@ -1,12 +1,12 @@
 create table roles (
     id serial primary key,
-    name varchar(30)
+    name varchar(255)
 );
 
 create table people (
     id serial primary key,
-    login varchar(30),
-    password varchar(30)
+    username varchar(255),
+    password varchar(255)
 );
 
 create table rooms (
