@@ -8,8 +8,27 @@
 
 ## Запуск через Docker Compose
 * Все команды выполнять в терминале
-1. Скопировать проект ```git clone https://github.com/oryngalikarimzhan/job4j_chat```
-2. Перейти в корень проекта ```cd job4j_chat```
-3. Cобрать приложение командой: ```mvn install -Dmaven.test.skip=true```
-4. Собирать образ в docker ```docker build -t chat .```
-5. Запустить сервисы ```docker-compose up```
+1. Скопировать проект 
+```
+git clone https://github.com/oryngalikarimzhan/job4j_chat
+```
+2. Перейти в корень проекта 
+```
+2. cd job4j_chat
+```
+
+3. 3.Cобрать приложение командой: 
+```
+mvn install -Dmaven.test.skip=true
+```
+
+4. 4.Собирать образ в docker 
+```
+docker build -t chat .
+```
+
+
+5. Запустить сервисы 
+```
+docker-compose up
+```
